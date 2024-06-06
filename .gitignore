@@ -51,3 +51,6 @@ $HOME
 # Apple files
 *.icloud
 
+# Java files
+*.class
+
