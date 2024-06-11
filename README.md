@@ -1,4 +1,3 @@
-# craftinginterpreters
+# crafting-interpreters
 
-Examples and exercises from "[Crafting Interpreters](https://craftinginterpreters.com/)" - Robert Nystrom 
-
+Examples and exercises from "[Crafting Interpreters](https://craftinginterpreters.com/)" - Robert Nystrom
