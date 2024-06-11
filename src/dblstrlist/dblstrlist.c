@@ -20,6 +20,10 @@ void sassign(struct snode *s, char *k) {
     s->prev = s->next = NULL;
 }
 
+char* get_key(struct snode *s) {
+    return s->key;
+}
+
 struct dblstrlist {
     struct snode *head;
 };
@@ -34,7 +38,7 @@ struct dblstrlist *dblstrlistalloc(void) {
 struct snode *list_search(struct dblstrlist *l, char *k) {
     struct snode *x = l->head;
 
-    while (x != NULL && !strcmp(x->key, k))
+    while (x != NULL && strcmp(x->key, k) != 0)
         x = x->next;
     
     return x;
@@ -48,4 +52,14 @@ void list_insert(struct dblstrlist *l, struct snode *x) {
         l->head->prev = x;
     l->head = x;
     x->prev = NULL;
+}
+
+/* List-Delete(L, x) removes an element x from list L. */
+void list_delete(struct dblstrlist *l, struct snode *x) {
+    if (x->prev != NULL)
+        x->prev->next = x->next;
+    else
+        l->head = x->next;
+    if (x->next != NULL)
+        x->next->prev = x->prev;
 }

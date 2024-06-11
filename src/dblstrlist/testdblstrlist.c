@@ -1,39 +1,67 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "dblstrlist.h"
 
 
 int main(int argc, char* argv[]) {
-    struct dblstrlist *l = dblstrlistalloc(); 
+    struct dblstrlist *l = NULL;
     struct snode *x = NULL;
     int i;
     
-    for (i = 1; i <= 5; ++i) {
+    l = dblstrlistalloc(); 
+    for (i = 0; i < 5; ++i) {
         x = smalloc();
 
         if (x != NULL) {
             switch(i) {
             case 0:
-                sassign(x, "Hello");
+                sassign(x, "you?");
                 break;
             case 1:
-                sassign(x, "world");
+                sassign(x, "are");
                 break;
             case 2:
                 sassign(x, "how");
                 break;
             case 3:
-                sassign(x, "are");
+                sassign(x, "world");
                 break;
             case 4:
-                sassign(x, "you?");
+                sassign(x, "Hello");
                 break;
             default:
                 break;
             }
-            list_insert(l, x);
+
+            if (x != NULL)
+                list_insert(l, x);
         }
     }
+
+    while (1) {
+        if ((x = list_search(l, "Hello")) != NULL)
+            list_delete(l, x);
+        else if ((x = list_search(l, "world")) != NULL)
+            list_delete(l, x);
+        else if ((x = list_search(l, "how")) != NULL)
+            list_delete(l, x);
+        else if ((x = list_search(l, "are ")) != NULL)
+            list_delete(l, x);
+        else if ((x = list_search(l, "you?")) != NULL)
+            list_delete(l, x);
+        else
+            break;
+
+        printf("%s ", get_key(x));
+
+        if (x != NULL)
+            free(x);
+    }
+
+    printf("\n");
+
+    free(l);
 
     return 0;
 }
