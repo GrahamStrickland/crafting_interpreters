@@ -5,10 +5,12 @@ project(clox)
 set(HEADER FILES
     common.h
     chunk.h
+    debug.h
     memory.h
 )
 set(SOURCES 
     chunk.c
+    debug.c
     memory.c
     main.c
 )
