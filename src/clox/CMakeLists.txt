@@ -7,12 +7,14 @@ set(HEADER FILES
     chunk.h
     debug.h
     memory.h
+    value.h
 )
 set(SOURCES 
     chunk.c
     debug.c
     memory.c
     main.c
+    value.c
 )
 
 add_executable(clox ${SOURCES})
