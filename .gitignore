@@ -38,6 +38,9 @@ compile_commands.json
 CMakeCache.txt
 **/CMakeFiles/*
 
+# Clangd files
+**/.cache/*
+
 # Natvis files
 *.natvis
 
