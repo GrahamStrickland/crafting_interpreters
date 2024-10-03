@@ -8,6 +8,7 @@ set(HEADER FILES
     chunk.h
     debug.h
     memory.h
+    object.h
     scanner.h
     value.h
     vm.h
@@ -18,6 +19,7 @@ set(SOURCES
     debug.c
     memory.c
     main.c
+    object.c
     scanner.c
     value.c
     vm.c
