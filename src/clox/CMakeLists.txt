@@ -10,6 +10,7 @@ set(HEADER FILES
     memory.h
     object.h
     scanner.h
+    table.h
     value.h
     vm.h
 )
@@ -21,6 +22,7 @@ set(SOURCES
     main.c
     object.c
     scanner.c
+    table.c
     value.c
     vm.c
 )
