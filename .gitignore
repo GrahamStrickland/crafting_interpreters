@@ -61,3 +61,6 @@ $HOME
 # Java files
 *.class
 
+# Maven files
+.mvn
+target
