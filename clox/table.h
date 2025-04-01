@@ -1,7 +1,6 @@
 #ifndef clox_table_h
 #define clox_table_h
 
-#include "common.h"
 #include "value.h"
 
 typedef struct {
@@ -23,5 +22,7 @@ bool tableDelete(Table *table, ObjString *key);
 void tableAddAll(Table *from, Table *to);
 ObjString *tableFindString(Table *table, const char *chars, int length,
                            uint32_t hash);
+
+void markTable(Table *table);
 
 #endif
