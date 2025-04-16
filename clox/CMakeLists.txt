@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.0)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g3 -std=c17")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g3 -std=c23")
 project(clox)
 
 set(HEADER FILES
