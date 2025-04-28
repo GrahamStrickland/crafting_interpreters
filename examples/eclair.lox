@@ -1,0 +1,5 @@
+class Pastry {}
+
+var eclair = Pastry();
+eclair.filling = "pastry creme";
+print eclair.filling;
