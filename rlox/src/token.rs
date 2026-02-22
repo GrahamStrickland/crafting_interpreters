@@ -1,15 +1,16 @@
 use crate::literal::Literal;
 use crate::token_type::TokenType;
 
+#[derive(Debug)]
 pub struct Token {
     token_type: TokenType,
     lexeme: String,
     literal: Literal,
-    line: i32,
+    line: usize,
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, lexeme: String, literal: Literal, line: i32) -> Self {
+    pub fn new(token_type: TokenType, lexeme: String, literal: Literal, line: usize) -> Self {
         Token {
             token_type,
             lexeme,

@@ -1,6 +1,8 @@
+use crate::scanner::Scanner;
 use std::fs::File;
 use std::io::{BufReader, Read, Result, stdin};
 
+#[derive(Default)]
 pub struct Lox {
     pub had_error: bool,
 }
@@ -51,11 +53,11 @@ impl Lox {
     }
 
     pub fn run(&self, source: String) {
-        let scanner = Scanner::new(source);
+        let mut scanner = Scanner::new(source);
         let tokens = scanner.scan_tokens();
 
         for token in tokens {
-            println!("{}", token);
+            println!("{:?}", token);
         }
     }
 

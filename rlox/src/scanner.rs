@@ -1,0 +1,82 @@
+use crate::literal::Literal;
+use crate::token::Token;
+use crate::token_type::TokenType;
+
+pub struct Scanner {
+    source: String,
+    tokens: Vec<Token>,
+    start: usize,
+    current: usize,
+    line: usize,
+}
+
+impl Scanner {
+    pub fn new(source: String) -> Self {
+        Scanner {
+            source,
+            tokens: vec![],
+            start: 0,
+            current: 0,
+            line: 1,
+        }
+    }
+
+    pub fn scan_tokens(&mut self) -> &Vec<Token> {
+        while !self.is_at_end() {
+            // We are at the beginning of the next lexeme.
+            self.start = self.current;
+            self.scan_token();
+        }
+
+        self.tokens.push(Token::new(
+            TokenType::Eof,
+            String::new(),
+            Literal::Null,
+            self.line,
+        ));
+
+        &self.tokens
+    }
+
+    fn scan_token(&mut self) {
+        let current_char = self.advance();
+
+        if let Some(c) = current_char {
+            match c {
+                '(' => self.add_token(TokenType::LeftParen, Literal::Null),
+                ')' => self.add_token(TokenType::RightParen, Literal::Null),
+                '{' => self.add_token(TokenType::LeftBrace, Literal::Null),
+                '}' => self.add_token(TokenType::RightBrace, Literal::Null),
+                ',' => self.add_token(TokenType::Comma, Literal::Null),
+                '.' => self.add_token(TokenType::Dot, Literal::Null),
+                '-' => self.add_token(TokenType::Minus, Literal::Null),
+                '+' => self.add_token(TokenType::Plus, Literal::Null),
+                ';' => self.add_token(TokenType::Semicolon, Literal::Null),
+                '*' => self.add_token(TokenType::Star, Literal::Null),
+                _ => (),
+            }
+        }
+    }
+
+    fn advance(&mut self) -> Option<char> {
+        self.current += 1;
+        self.source.chars().nth(self.current)
+    }
+
+    fn add_token(&mut self, token_type: TokenType, literal: Literal) {
+        let mut text = String::new();
+        for i in self.start..self.current {
+            match self.source.chars().nth(i) {
+                Some(c) => text.push(c),
+                None => continue,
+            }
+        }
+
+        self.tokens
+            .push(Token::new(token_type, text, literal, self.line));
+    }
+
+    fn is_at_end(&self) -> bool {
+        self.current >= self.source.len()
+    }
+}
