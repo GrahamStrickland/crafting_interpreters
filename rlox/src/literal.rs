@@ -1,6 +1,6 @@
 #[derive(Debug)]
 pub enum Literal {
-    Double,
-    String,
+    Double(f64),
+    String(String),
     Null,
 }

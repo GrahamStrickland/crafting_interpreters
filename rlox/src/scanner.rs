@@ -87,9 +87,81 @@ impl Scanner {
                     };
                     self.add_token(token, Literal::Null);
                 }
-                _ => self.error(self.line, String::from("Unexpected character.")),
+                '/' => {
+                    if self.match_token('/') {
+                        // A comment goes until the end of the line.
+                        while self.peek() != Some('\n') && !self.is_at_end() {
+                            self.advance();
+                        }
+                    } else {
+                        self.add_token(TokenType::Slash, Literal::Null);
+                    }
+                }
+                ' ' | '\r' | '\t' => {
+                    // Ignore whitespace.
+                }
+                '\n' => {
+                    self.line += 1;
+                }
+                '"' => self.string(),
+                _ => {
+                    if self.is_digit(&c) {
+                        self.number();
+                    } else {
+                        self.error(self.line, String::from("Unexpected character."));
+                    }
+                }
             }
         }
+    }
+
+    fn number(&mut self) {
+        let mut c = self.peek();
+        while self.is_digit(&c.unwrap()) {
+            self.advance();
+            c = self.peek();
+        }
+
+        // Look for a fractional part.
+        if self.peek() == Some('.') {
+            let next = self.peek_next();
+            if self.is_digit(&next.unwrap()) {
+                // Consume the "."
+                self.advance();
+
+                c = self.peek();
+                while self.is_digit(&c.unwrap()) {
+                    self.advance();
+                    c = self.peek();
+                }
+            }
+        }
+
+        let value = self
+            .substring(self.start, self.current)
+            .parse::<f64>()
+            .unwrap();
+        self.add_token(TokenType::Number, Literal::Double(value));
+    }
+
+    fn string(&mut self) {
+        while self.peek() != Some('"') && !self.is_at_end() {
+            if self.peek() == Some('\n') {
+                self.line += 1;
+            }
+            self.advance();
+        }
+
+        if self.is_at_end() {
+            self.error(self.line, String::from("Unterminated string."));
+            return;
+        }
+
+        self.advance(); // The closing ".
+
+        // Trim the surrounding quotes.
+        let value = self.substring(self.start + 1, self.current - 1);
+        self.add_token(TokenType::String, Literal::String(value));
     }
 
     fn match_token(&mut self, expected: char) -> bool {
@@ -104,6 +176,25 @@ impl Scanner {
         true
     }
 
+    fn peek(&mut self) -> Option<char> {
+        if self.is_at_end() {
+            return Some('\0');
+        }
+        self.source.chars().nth(self.current)
+    }
+
+    fn peek_next(&mut self) -> Option<char> {
+        if self.current + 1 >= self.source.len() {
+            Some('\0')
+        } else {
+            self.source.chars().nth(self.current + 1)
+        }
+    }
+
+    fn is_digit(&mut self, c: &char) -> bool {
+        *c >= '0' && *c <= '9'
+    }
+
     fn advance(&mut self) -> Option<char> {
         let c = self.source.chars().nth(self.current);
         self.current += 1;
@@ -111,16 +202,23 @@ impl Scanner {
     }
 
     fn add_token(&mut self, token_type: TokenType, literal: Literal) {
+        let text = self.substring(self.start, self.current);
+
+        self.tokens
+            .push(Token::new(token_type, text, literal, self.line));
+    }
+
+    fn substring(&mut self, start: usize, end: usize) -> String {
         let mut text = String::new();
-        for i in self.start..self.current {
+
+        for i in start..end {
             match self.source.chars().nth(i) {
                 Some(c) => text.push(c),
                 None => continue,
             }
         }
 
-        self.tokens
-            .push(Token::new(token_type, text, literal, self.line));
+        text
     }
 
     fn is_at_end(&self) -> bool {
