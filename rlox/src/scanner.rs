@@ -3,6 +3,7 @@ use crate::token::Token;
 use crate::token_type::TokenType;
 
 pub struct Scanner {
+    pub had_error: bool,
     source: String,
     tokens: Vec<Token>,
     start: usize,
@@ -13,6 +14,7 @@ pub struct Scanner {
 impl Scanner {
     pub fn new(source: String) -> Self {
         Scanner {
+            had_error: false,
             source,
             tokens: vec![],
             start: 0,
@@ -53,7 +55,7 @@ impl Scanner {
                 '+' => self.add_token(TokenType::Plus, Literal::Null),
                 ';' => self.add_token(TokenType::Semicolon, Literal::Null),
                 '*' => self.add_token(TokenType::Star, Literal::Null),
-                _ => (),
+                _ => self.error(self.line, String::from("Unexpected character.")),
             }
         }
     }
@@ -79,5 +81,14 @@ impl Scanner {
 
     fn is_at_end(&self) -> bool {
         self.current >= self.source.len()
+    }
+
+    pub fn error(&mut self, line: usize, message: String) {
+        self.report(line, String::new(), message);
+    }
+
+    pub fn report(&mut self, line: usize, location: String, message: String) {
+        eprintln!("[line {}] Error{}: {}", line, location, message);
+        self.had_error = true;
     }
 }

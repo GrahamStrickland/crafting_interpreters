@@ -60,13 +60,4 @@ impl Lox {
             println!("{:?}", token);
         }
     }
-
-    pub fn error(self, line: i32, message: String) {
-        self.report(line, String::new(), message);
-    }
-
-    pub fn report(mut self, line: i32, location: String, message: String) {
-        eprintln!("[line {}] Error{}: {}", line, location, message);
-        self.had_error = true;
-    }
 }
