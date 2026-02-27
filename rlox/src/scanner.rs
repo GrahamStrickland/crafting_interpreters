@@ -59,8 +59,9 @@ impl Scanner {
     }
 
     fn advance(&mut self) -> Option<char> {
+        let c = self.source.chars().nth(self.current);
         self.current += 1;
-        self.source.chars().nth(self.current)
+        c
     }
 
     fn add_token(&mut self, token_type: TokenType, literal: Literal) {
