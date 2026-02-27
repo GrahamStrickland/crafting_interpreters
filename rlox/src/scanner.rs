@@ -55,9 +55,53 @@ impl Scanner {
                 '+' => self.add_token(TokenType::Plus, Literal::Null),
                 ';' => self.add_token(TokenType::Semicolon, Literal::Null),
                 '*' => self.add_token(TokenType::Star, Literal::Null),
+                '!' => {
+                    let token = if self.match_token('=') {
+                        TokenType::BangEqual
+                    } else {
+                        TokenType::Bang
+                    };
+                    self.add_token(token, Literal::Null);
+                }
+                '=' => {
+                    let token = if self.match_token('=') {
+                        TokenType::EqualEqual
+                    } else {
+                        TokenType::Equal
+                    };
+                    self.add_token(token, Literal::Null);
+                }
+                '<' => {
+                    let token = if self.match_token('=') {
+                        TokenType::LessEqual
+                    } else {
+                        TokenType::Less
+                    };
+                    self.add_token(token, Literal::Null);
+                }
+                '>' => {
+                    let token = if self.match_token('=') {
+                        TokenType::GreaterEqual
+                    } else {
+                        TokenType::Greater
+                    };
+                    self.add_token(token, Literal::Null);
+                }
                 _ => self.error(self.line, String::from("Unexpected character.")),
             }
         }
+    }
+
+    fn match_token(&mut self, expected: char) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+        if self.source.chars().nth(self.current) != Some(expected) {
+            return false;
+        }
+
+        self.current += 1;
+        true
     }
 
     fn advance(&mut self) -> Option<char> {
