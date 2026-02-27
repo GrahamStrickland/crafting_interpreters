@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::literal::Literal;
 use crate::token::Token;
 use crate::token_type::TokenType;
@@ -9,6 +11,7 @@ pub struct Scanner {
     start: usize,
     current: usize,
     line: usize,
+    keywords: HashMap<&'static str, TokenType>,
 }
 
 impl Scanner {
@@ -20,6 +23,24 @@ impl Scanner {
             start: 0,
             current: 0,
             line: 1,
+            keywords: HashMap::from([
+                ("and", TokenType::And),
+                ("class", TokenType::Class),
+                ("else", TokenType::Else),
+                ("false", TokenType::False),
+                ("for", TokenType::For),
+                ("fun", TokenType::Fun),
+                ("if", TokenType::If),
+                ("nil", TokenType::Nil),
+                ("or", TokenType::Or),
+                ("print", TokenType::Print),
+                ("return", TokenType::Return),
+                ("super", TokenType::Super),
+                ("this", TokenType::This),
+                ("true", TokenType::True),
+                ("var", TokenType::Var),
+                ("while", TokenType::While),
+            ]),
         }
     }
 
@@ -107,12 +128,33 @@ impl Scanner {
                 _ => {
                     if self.is_digit(&c) {
                         self.number();
+                    } else if c.is_alphabetic() {
+                        self.identifier();
                     } else {
                         self.error(self.line, String::from("Unexpected character."));
                     }
                 }
             }
         }
+    }
+
+    fn identifier(&mut self) {
+        let mut c = self.peek();
+        while self.is_alphanumeric(&c.unwrap()) {
+            self.advance();
+            c = self.peek();
+        }
+
+        let text = self.substring(self.start, self.current);
+        let token_type = self.keywords.get(text.as_str());
+
+        self.add_token(
+            match token_type {
+                Some(t) => *t,
+                None => TokenType::Identifier,
+            },
+            Literal::Null,
+        );
     }
 
     fn number(&mut self) {
@@ -189,6 +231,14 @@ impl Scanner {
         } else {
             self.source.chars().nth(self.current + 1)
         }
+    }
+
+    fn is_alpha(&mut self, c: &char) -> bool {
+        (*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z') || *c == '_'
+    }
+
+    fn is_alphanumeric(&mut self, c: &char) -> bool {
+        self.is_alpha(c) || self.is_digit(c)
     }
 
     fn is_digit(&mut self, c: &char) -> bool {
