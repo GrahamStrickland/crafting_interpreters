@@ -284,3 +284,166 @@ impl Scanner {
         self.had_error = true;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Scanner;
+    use crate::literal::Literal;
+    use crate::token_type::TokenType;
+
+    #[test]
+    fn test_scanner_match_token() {
+        let mut scanner = Scanner::new(String::from("Hello!"));
+
+        assert!(scanner.match_token('H'));
+        scanner.current = 1;
+        assert!(scanner.match_token('e'));
+        scanner.current = 2;
+        assert!(scanner.match_token('l'));
+        scanner.current = 3;
+        assert!(scanner.match_token('l'));
+        scanner.current = 4;
+        assert!(scanner.match_token('o'));
+        scanner.current = 5;
+        assert!(scanner.match_token('!'));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_scanner_match_token_eof() {
+        let mut scanner = Scanner::new(String::from(""));
+        assert!(scanner.match_token('a'));
+    }
+
+    #[test]
+    fn test_scanner_peek() {
+        let mut scanner = Scanner::new(String::from("Hello!"));
+
+        assert_eq!(scanner.peek(), Some('H'));
+        scanner.current = 1;
+        assert_eq!(scanner.peek(), Some('e'));
+        scanner.current = 2;
+        assert_eq!(scanner.peek(), Some('l'));
+        scanner.current = 3;
+        assert_eq!(scanner.peek(), Some('l'));
+        scanner.current = 4;
+        assert_eq!(scanner.peek(), Some('o'));
+        scanner.current = 5;
+        assert_eq!(scanner.peek(), Some('!'));
+        scanner.current = 6;
+        assert_eq!(scanner.peek(), Some('\0'));
+    }
+
+    #[test]
+    fn test_scanner_peek_next() {
+        let mut scanner = Scanner::new(String::from("Hello!"));
+
+        assert_eq!(scanner.peek_next(), Some('e'));
+        scanner.current = 1;
+        assert_eq!(scanner.peek_next(), Some('l'));
+        scanner.current = 2;
+        assert_eq!(scanner.peek_next(), Some('l'));
+        scanner.current = 3;
+        assert_eq!(scanner.peek_next(), Some('o'));
+        scanner.current = 4;
+        assert_eq!(scanner.peek_next(), Some('!'));
+        scanner.current = 5;
+        assert_eq!(scanner.peek_next(), Some('\0'));
+        scanner.current = 6;
+        assert_eq!(scanner.peek_next(), Some('\0'));
+    }
+
+    #[test]
+    fn test_scanner_is_alpha() {
+        let mut scanner = Scanner::new(String::from(""));
+
+        let c = 'a';
+        assert!(scanner.is_alpha(&c));
+
+        let c = 'A';
+        assert!(scanner.is_alpha(&c));
+
+        let c = 'z';
+        assert!(scanner.is_alpha(&c));
+
+        let c = 'Z';
+        assert!(scanner.is_alpha(&c));
+
+        let c = ';';
+        assert!(!scanner.is_alpha(&c));
+
+        let c = '0';
+        assert!(!scanner.is_alpha(&c));
+    }
+
+    #[test]
+    fn test_scanner_is_digit() {
+        let mut scanner = Scanner::new(String::from(""));
+
+        let c = '0';
+        assert!(scanner.is_digit(&c));
+
+        let c = '1';
+        assert!(scanner.is_digit(&c));
+
+        let c = 'a';
+        assert!(!scanner.is_digit(&c));
+
+        let c = ';';
+        assert!(!scanner.is_digit(&c));
+    }
+
+    #[test]
+    fn test_scanner_advance() {
+        let mut scanner = Scanner::new(String::from("Hello!"));
+
+        assert_eq!(scanner.advance(), Some('H'));
+        assert_eq!(scanner.advance(), Some('e'));
+        assert_eq!(scanner.advance(), Some('l'));
+        assert_eq!(scanner.advance(), Some('l'));
+        assert_eq!(scanner.advance(), Some('o'));
+        assert_eq!(scanner.advance(), Some('!'));
+        assert_eq!(scanner.advance(), None);
+    }
+
+    #[test]
+    fn test_scanner_add_token() {
+        let mut scanner = Scanner::new(String::from("1.234 \"hello\""));
+
+        assert_eq!(scanner.tokens.len(), 0);
+
+        scanner.start = 0;
+        scanner.current = 5;
+        scanner.add_token(TokenType::Number, Literal::Double(1.234));
+        assert_eq!(scanner.tokens.len(), 1);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[0]),
+            String::from(
+                "Token { token_type: Number, lexeme: \"1.234\", literal: Double(1.234), line: 1 }"
+            )
+        );
+
+        scanner.start = 6;
+        scanner.current = 13;
+        scanner.add_token(TokenType::String, Literal::String(String::from("hello")));
+        assert_eq!(scanner.tokens.len(), 2);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[1]),
+            String::from(
+                "Token { token_type: String, lexeme: \"\\\"hello\\\"\", literal: String(\"hello\"), line: 1 }"
+            )
+        );
+    }
+
+    #[test]
+    fn test_scanner_substring() {
+        let mut scanner = Scanner::new(String::from("Hello!"));
+
+        assert_eq!(scanner.substring(0, 0), String::from(""));
+        assert_eq!(scanner.substring(0, 1), String::from("H"));
+        assert_eq!(scanner.substring(1, 2), String::from("e"));
+        assert_eq!(scanner.substring(0, 2), String::from("He"));
+        assert_eq!(scanner.substring(0, 6), String::from("Hello!"));
+        assert_eq!(scanner.substring(0, 7), String::from("Hello!"));
+    }
+}
