@@ -292,7 +292,204 @@ mod tests {
     use crate::token_type::TokenType;
 
     #[test]
-    fn test_scanner_match_token() {
+    fn test_scan_tokens() {
+        let mut scanner = Scanner::new(String::from("1 + 2"));
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('1'));
+
+        scanner.scan_tokens();
+        assert_eq!(scanner.tokens.len(), 4);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[0]),
+            "Token { token_type: Number, lexeme: \"1\", literal: Double(1.0), line: 1 }"
+        );
+        assert_eq!(
+            format!("{:?}", scanner.tokens[1]),
+            "Token { token_type: Plus, lexeme: \"+\", literal: Null, line: 1 }"
+        );
+        assert_eq!(
+            format!("{:?}", scanner.tokens[2]),
+            "Token { token_type: Number, lexeme: \"2\", literal: Double(2.0), line: 1 }"
+        );
+        assert_eq!(
+            format!("{:?}", scanner.tokens[3]),
+            "Token { token_type: Eof, lexeme: \"\", literal: Null, line: 1 }"
+        );
+    }
+
+    #[test]
+    fn test_scan_token() {
+        let mut scanner = Scanner::new(String::from("1 + 2"));
+
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('1'));
+
+        scanner.scan_token();
+
+        assert_eq!(scanner.tokens.len(), 1);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[0]),
+            "Token { token_type: Number, lexeme: \"1\", literal: Double(1.0), line: 1 }"
+        );
+
+        scanner.scan_token();
+        scanner.start = scanner.current;
+        scanner.scan_token();
+
+        assert_eq!(scanner.tokens.len(), 2);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[1]),
+            "Token { token_type: Plus, lexeme: \"+\", literal: Null, line: 1 }"
+        );
+
+        scanner.scan_token();
+        scanner.start = scanner.current;
+        scanner.scan_token();
+
+        assert_eq!(scanner.tokens.len(), 3);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[2]),
+            "Token { token_type: Number, lexeme: \"2\", literal: Double(2.0), line: 1 }"
+        );
+
+        scanner = Scanner::new(String::from("1 + $"));
+
+        scanner.scan_token();
+        scanner.start = scanner.current;
+        scanner.scan_token();
+        scanner.start = scanner.current;
+        scanner.scan_token();
+        scanner.start = scanner.current;
+        scanner.scan_token();
+        scanner.start = scanner.current;
+        scanner.scan_token();
+        scanner.start = scanner.current;
+        assert!(scanner.had_error);
+    }
+
+    #[test]
+    fn test_identifier() {
+        let mut scanner = Scanner::new(String::from("class"));
+
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('c'));
+
+        scanner.advance();
+        scanner.identifier();
+
+        assert_eq!(scanner.tokens.len(), 1);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[0]),
+            String::from("Token { token_type: Class, lexeme: \"class\", literal: Null, line: 1 }")
+        );
+
+        scanner = Scanner::new(String::from("print"));
+
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('p'));
+
+        scanner.advance();
+        scanner.identifier();
+
+        assert_eq!(scanner.tokens.len(), 1);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[0]),
+            String::from("Token { token_type: Print, lexeme: \"print\", literal: Null, line: 1 }")
+        );
+    }
+
+    #[test]
+    fn test_number() {
+        let mut scanner = Scanner::new(String::from("1"));
+
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('1'));
+
+        scanner.advance();
+        scanner.number();
+
+        assert_eq!(scanner.tokens.len(), 1);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[0]),
+            String::from(
+                "Token { token_type: Number, lexeme: \"1\", literal: Double(1.0), line: 1 }"
+            )
+        );
+
+        scanner = Scanner::new(String::from("1.234"));
+
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('1'));
+
+        scanner.advance();
+        scanner.number();
+
+        assert_eq!(scanner.tokens.len(), 1);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[0]),
+            String::from(
+                "Token { token_type: Number, lexeme: \"1.234\", literal: Double(1.234), line: 1 }"
+            )
+        );
+    }
+
+    #[test]
+    fn test_string() {
+        let mut scanner = Scanner::new(String::from("\"\""));
+
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('"'));
+
+        scanner.advance();
+        scanner.string();
+
+        assert_eq!(scanner.tokens.len(), 1);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[0]),
+            String::from(
+                "Token { token_type: String, lexeme: \"\\\"\\\"\", literal: String(\"\"), line: 1 }"
+            )
+        );
+
+        scanner = Scanner::new(String::from("\"Hello!\""));
+
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('"'));
+
+        scanner.advance();
+        scanner.string();
+
+        assert_eq!(scanner.tokens.len(), 1);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[0]),
+            String::from(
+                "Token { token_type: String, lexeme: \"\\\"Hello!\\\"\", literal: String(\"Hello!\"), line: 1 }"
+            )
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_unterminated_string() {
+        let mut scanner = Scanner::new(String::from("\"Hello!"));
+
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('"'));
+
+        scanner.advance();
+        scanner.string();
+
+        assert_eq!(scanner.tokens.len(), 1);
+        assert_eq!(
+            format!("{:?}", scanner.tokens[0]),
+            String::from(
+                "Token { token_type: String, lexeme: \"\\\"Hello!\\\"\", literal: String(\"Hello!\"), line: 1 }"
+            )
+        );
+    }
+
+    #[test]
+    fn test_match_token() {
         let mut scanner = Scanner::new(String::from("Hello!"));
 
         assert!(scanner.match_token('H'));
@@ -310,13 +507,13 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_scanner_match_token_eof() {
+    fn test_match_token_eof() {
         let mut scanner = Scanner::new(String::from(""));
         assert!(scanner.match_token('a'));
     }
 
     #[test]
-    fn test_scanner_peek() {
+    fn test_peek() {
         let mut scanner = Scanner::new(String::from("Hello!"));
 
         assert_eq!(scanner.peek(), Some('H'));
@@ -335,7 +532,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scanner_peek_next() {
+    fn test_peek_next() {
         let mut scanner = Scanner::new(String::from("Hello!"));
 
         assert_eq!(scanner.peek_next(), Some('e'));
@@ -354,7 +551,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scanner_is_alpha() {
+    fn test_is_alpha() {
         let mut scanner = Scanner::new(String::from(""));
 
         let c = 'a';
@@ -377,7 +574,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scanner_is_digit() {
+    fn test_is_digit() {
         let mut scanner = Scanner::new(String::from(""));
 
         let c = '0';
@@ -394,7 +591,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scanner_advance() {
+    fn test_advance() {
         let mut scanner = Scanner::new(String::from("Hello!"));
 
         assert_eq!(scanner.advance(), Some('H'));
@@ -407,7 +604,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scanner_add_token() {
+    fn test_add_token() {
         let mut scanner = Scanner::new(String::from("1.234 \"hello\""));
 
         assert_eq!(scanner.tokens.len(), 0);
@@ -436,7 +633,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scanner_substring() {
+    fn test_substring() {
         let mut scanner = Scanner::new(String::from("Hello!"));
 
         assert_eq!(scanner.substring(0, 0), String::from(""));
