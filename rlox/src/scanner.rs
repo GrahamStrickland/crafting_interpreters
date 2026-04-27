@@ -111,8 +111,13 @@ impl Scanner {
                 '/' => {
                     if self.match_token('/') {
                         // A comment goes until the end of the line.
-                        while self.peek() != Some('\n') && !self.is_at_end() {
+                        while !self.is_at_end() && self.peek() != Some('\n') {
                             self.advance();
+                        }
+                    } else if self.match_token('*') {
+                        match self.block_comment() {
+                            Ok(_) => (),
+                            Err(e) => self.error(self.line, String::from(e)),
                         }
                     } else {
                         self.add_token(TokenType::Slash, Literal::Null);
@@ -206,6 +211,25 @@ impl Scanner {
         self.add_token(TokenType::String, Literal::String(value));
     }
 
+    fn block_comment(&mut self) -> Result<(), &'static str> {
+        while !self.is_at_end() {
+            if self.peek() == Some('*') {
+                self.match_token('*');
+
+                if self.peek() == Some('/') {
+                    self.match_token('/');
+                    return Ok(());
+                }
+
+                return Err("Unterminated block comment, expected '/'.");
+            } else {
+                self.advance();
+            }
+        }
+
+        Err("Unterminated block comment, expected '*' but reached end of input.")
+    }
+
     fn match_token(&mut self, expected: char) -> bool {
         if self.is_at_end() {
             return false;
@@ -293,7 +317,9 @@ mod tests {
 
     #[test]
     fn test_scan_tokens() {
-        let mut scanner = Scanner::new(String::from("1 + 2"));
+        let mut scanner = Scanner::new(String::from(
+            "1 + 2 // This is a comment\n/* This is also a comment */",
+        ));
         assert_eq!(scanner.tokens.len(), 0);
         assert_eq!(scanner.peek(), Some('1'));
 
@@ -313,7 +339,7 @@ mod tests {
         );
         assert_eq!(
             format!("{:?}", scanner.tokens[3]),
-            "Token { token_type: Eof, lexeme: \"\", literal: Null, line: 1 }"
+            "Token { token_type: Eof, lexeme: \"\", literal: Null, line: 2 }"
         );
     }
 
@@ -466,12 +492,8 @@ mod tests {
                 "Token { token_type: String, lexeme: \"\\\"Hello!\\\"\", literal: String(\"Hello!\"), line: 1 }"
             )
         );
-    }
 
-    #[test]
-    #[should_panic]
-    fn test_unterminated_string() {
-        let mut scanner = Scanner::new(String::from("\"Hello!"));
+        scanner = Scanner::new(String::from("\"Hello!"));
 
         assert_eq!(scanner.tokens.len(), 0);
         assert_eq!(scanner.peek(), Some('"'));
@@ -479,13 +501,57 @@ mod tests {
         scanner.advance();
         scanner.string();
 
-        assert_eq!(scanner.tokens.len(), 1);
-        assert_eq!(
-            format!("{:?}", scanner.tokens[0]),
-            String::from(
-                "Token { token_type: String, lexeme: \"\\\"Hello!\\\"\", literal: String(\"Hello!\"), line: 1 }"
-            )
-        );
+        assert!(scanner.had_error);
+    }
+
+    #[test]
+    fn test_block_comment() {
+        let mut scanner = Scanner::new(String::from("/* This is a block comment */"));
+
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('/'));
+
+        scanner.advance();
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('*'));
+
+        scanner.advance();
+
+        let mut res = scanner.block_comment();
+
+        assert_eq!(res, Ok(()));
+        assert_eq!(scanner.tokens.len(), 0);
+
+        scanner = Scanner::new(String::from("/* This is a block\ncomment */1 + 2"));
+
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('/'));
+
+        scanner.advance();
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('*'));
+
+        scanner.advance();
+
+        res = scanner.block_comment();
+
+        assert_eq!(res, Ok(()));
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('1'));
+
+        scanner = Scanner::new(String::from("/* This is not a block comment *"));
+
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('/'));
+
+        scanner.advance();
+        assert_eq!(scanner.tokens.len(), 0);
+        assert_eq!(scanner.peek(), Some('*'));
+
+        scanner.advance();
+
+        res = scanner.block_comment();
+        assert_eq!(res, Err("Unterminated block comment, expected '/'."));
     }
 
     #[test]
